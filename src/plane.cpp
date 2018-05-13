@@ -29,4 +29,5 @@ void Plane::changeBank(float change)
 void Plane::changeAirSpeed(float change)
 {
 	airSpeed += change;
+	if (airSpeed < 0.1f) airSpeed = 0.1f;
 }

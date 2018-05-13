@@ -175,7 +175,6 @@ int main()
 
 
 		// Update and draw the lightSource
-		//lampPos.x -= lampSpeed;
 		float sunRadius = 100.0f;
 		float lampX = sin(currentFrame/10.0f) * sunRadius;
 		float lampZ = cos(currentFrame/10.0f) * sunRadius;
@@ -277,9 +276,9 @@ void processInput(GLFWwindow *window)
 	if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
 		planeControl.changePitch(0.1);
 	if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS)
-		planeControl.changeAirSpeed(0.01f);
+		planeControl.changeAirSpeed(0.001f);
 	if (glfwGetKey(window, GLFW_KEY_PERIOD) == GLFW_PRESS)
-		planeControl.changeAirSpeed(-0.01f);
+		planeControl.changeAirSpeed(-0.001f);
 
 	if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
 		season = 1;
