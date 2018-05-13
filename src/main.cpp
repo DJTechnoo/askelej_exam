@@ -32,7 +32,7 @@ glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 // plane view and position, just like above's camera
-glm::vec3 planePos = glm::vec3(1.0f, 1.0f, 1.0f);
+glm::vec3 planePos = glm::vec3(1.0f, 3.0f, 2.0f);
 glm::vec3 planeFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 planeUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -125,7 +125,7 @@ int main()
 
 	
 	// The physical models: Terrain, lightsource, and plane respectively
-	Model terrain("../Assets/test5/first.obj");
+	Model terrain("../Assets/correct/first.obj");
 	Model lightSource("../Assets/test4/omg.obj");
 	Model planeModel("../Assets/model/ask21mi.blend");
 
@@ -179,7 +179,7 @@ int main()
 		float sunRadius = 100.0f;
 		float lampX = sin(currentFrame/10.0f) * sunRadius;
 		float lampZ = cos(currentFrame/10.0f) * sunRadius;
-		lampPos.x = lampX;
+		lampPos.y = lampX;
 		lampPos.z = lampZ;
 		lampShader.use();
 		model = glm::mat4();
@@ -194,11 +194,10 @@ int main()
 		planeShader.use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, planeTexture);
-		planePos += planeFront * 0.002f;
-		//planePos.z -= 0.002f;
+		planePos += planeFront * planeControl.airSpeed * deltaTime;
 		model = glm::mat4();
 		model = glm::translate(model, planePos); // translate it down so it's at the center of the scene
-		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));	// just a poor way to correct the plane
 		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		model = glm::rotate(model, glm::radians(180.f), glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::rotate(model, glm::radians(180.f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -213,22 +212,22 @@ int main()
 
 
 
-		//	Listen to which season to display
+		
+
 		glm::vec2 seasonVec;
 		switch (season)
 		{
-		case 1: seasonVec.x = -0.6f; seasonVec.y = -0.03f; break;
-		case 2: seasonVec.x = -1.5f; seasonVec.y = -0.09f; break;
-		case 3: seasonVec.x = -1.0f; seasonVec.y = -0.05f; break;
-		case 4: seasonVec.x = -0.01f; seasonVec.y = -0.01f; break;
+		case 1: seasonVec.x = -0.5f; seasonVec.y = 0.5f; break;
+		case 2: seasonVec.x = -0.5f; seasonVec.y = 0.9f; break;
+		case 3: seasonVec.x = -0.55f; seasonVec.y = 0.7f; break;
+		case 4: seasonVec.x = -0.6f; seasonVec.y = -0.6f; break;
 		}
 
 		// update season and draw terrain
 		modelShader.use();
 		modelShader.setVec2("season", seasonVec);
 		model = glm::mat4();
-		model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // translate it down so it's at the center of the scene
-		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); 
 		model = glm::scale(model, glm::vec3(2.2f, 2.2f, 2.2f));
 		modelShader.setMat4("projection", projection);
 		modelShader.setMat4("view", view);
@@ -277,6 +276,10 @@ void processInput(GLFWwindow *window)
 		planeControl.changeBank(-0.1);
 	if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
 		planeControl.changePitch(0.1);
+	if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS)
+		planeControl.changeAirSpeed(0.01f);
+	if (glfwGetKey(window, GLFW_KEY_PERIOD) == GLFW_PRESS)
+		planeControl.changeAirSpeed(-0.01f);
 
 	if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
 		season = 1;
@@ -286,6 +289,7 @@ void processInput(GLFWwindow *window)
 		season = 3;
 	if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
 		season = 4;
+
 
 	if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
 		orbit += 0.001f;

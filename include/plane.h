@@ -7,11 +7,12 @@
 
 class Plane {
 public:
-	float pitch, bank;
+	float pitch, bank, airSpeed;
 	glm::vec3 pos;
 	Plane(glm::vec3 startPos);
 	void changePitch(float change);
 	void changeBank(float change);
+	void changeAirSpeed(float change);
 
 
 };
