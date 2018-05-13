@@ -11,6 +11,7 @@
 #include "shader_loader_lo.h"
 
 #include "model.h"
+#include "plane.h"
 
 #include <iostream>
 
@@ -28,6 +29,10 @@ glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
+glm::vec3 planePos = glm::vec3(1.0f, 1.0f, 1.0f);
+glm::vec3 planeFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 planeUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
 bool firstMouse = true;
 float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
 float pitch = 0.0f;
@@ -40,6 +45,8 @@ float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
 int season;
+
+Plane planeControl(glm::vec3(1.0f, 1.0f, 1.0f));
 
 int main()
 {
@@ -170,13 +177,19 @@ int main()
 		ourShader.use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture1);
+		planePos += planeFront * 0.002f;
 		model = glm::mat4();
-		model = glm::translate(model, glm::vec3(0.0f, 1.75f, 0.0f)); // translate it down so it's at the center of the scene
+		model = glm::translate(model, planePos); // translate it down so it's at the center of the scene
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::rotate(model, glm::radians(180.f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(planeControl.pitch), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(planeControl.bank), glm::vec3(1.0f, 0.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// it's a bit too big for our scene, so scale it down
 		ourShader.setMat4("projection", projection);		
 		ourShader.setMat4("view", view);
 		ourShader.setMat4("model", model);
-		ourShader.setVec3("lampPos", lampPos);
+		
 		ourModel.Draw(ourShader);
 
 
@@ -200,6 +213,7 @@ int main()
 		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(2.2f, 2.2f, 2.2f));
 		modelShader.setMat4("model", model);
+		modelShader.setVec3("lampPos", lampPos);
 		terrain.Draw(modelShader);
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -237,6 +251,17 @@ void processInput(GLFWwindow *window)
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 
+
+
+	if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) 
+		planeControl.changePitch(0.1f);
+	if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
+		planeControl.changeBank(-0.1);
+	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+		planeControl.changePitch(-0.1);
+	if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
+		planeControl.changeBank(0.1);
+
 	if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
 		season = 1;
 	if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
@@ -245,6 +270,13 @@ void processInput(GLFWwindow *window)
 		season = 3;
 	if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
 		season = 4;
+
+	glm::vec3 front;
+	front.x = cos(glm::radians(planeControl.bank)) * cos(glm::radians(planeControl.pitch));
+	front.y = sin(glm::radians(planeControl.pitch));
+	front.z = sin(glm::radians(planeControl.bank)) * cos(glm::radians(planeControl.pitch));
+	planeFront = glm::normalize(front);
+
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
