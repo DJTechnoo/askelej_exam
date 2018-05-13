@@ -52,7 +52,7 @@ int main()
 
 														 // glfw window creation
 														 // --------------------
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Lovely Exam", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -81,6 +81,7 @@ int main()
 	// ------------------------------------
 	Shader ourShader("../shaders/vtx.vert", "../shaders/fmt.frag");
 	Shader modelShader("../shaders/model.vert","../shaders/model.frag");
+	Shader lampShader("../shaders/lamp.vert", "../shaders/lamp.frag");
 
 	// set up vertex data (and buffer(s)) and configure vertex attributes
 	// ------------------------------------------------------------------
@@ -191,10 +192,11 @@ int main()
 	ourShader.use();
 
 	Model terrain("../Assets/test5/first.obj");
+	Model lightSource("../Assets/test4/omg.obj");
 	Model ourModel("../Assets/model/ask21mi.blend");
 	ourShader.setInt("texture1", 0);
 	
-
+	glm::vec3 lampPos(1.0f, 3.0f, 0.0f);
 
 	// render loop
 	// -----------
@@ -215,53 +217,38 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// bind textures on corresponding texture units
-		
 		
 
-		// activate shader
-		/*ourShader.use();
-
-		// pass projection matrix to shader (note that in this case it could change every frame)
 		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-		ourShader.setMat4("projection", projection);
-
-		// camera/view transformation
 		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-		ourShader.setMat4("view", view);
+		glm::mat4 model;
 
-		// render boxes
-		glBindVertexArray(VAO);
-		for (unsigned int i = 0; i < 10; i++)
-		{
-			// calculate the model matrix for each object and pass it to shader before drawing
-			glm::mat4 model;
-			model = glm::translate(model, cubePositions[i]);
-			float angle = 20.0f * i;
-			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-			ourShader.setMat4("model", model);
 
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}*/
 		ourShader.use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture1);
-
-		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-		ourShader.setMat4("projection", projection);		
-		ourShader.setMat4("view", view);
-
-		glm::mat4 model;
 		model = glm::translate(model, glm::vec3(0.0f, 1.75f, 0.0f)); // translate it down so it's at the center of the scene
 		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// it's a bit too big for our scene, so scale it down
+		ourShader.setMat4("projection", projection);		
+		ourShader.setMat4("view", view);
 		ourShader.setMat4("model", model);
+		ourShader.setVec3("lampPos", lampPos);
 		ourModel.Draw(ourShader);
 
+
+		lampShader.use();
+		model = glm::mat4();
+		model = glm::translate(model, lampPos); // translate it down so it's at the center of the scene
+		lampShader.setMat4("model", model);
+		lampShader.setMat4("projection", projection);
+		lampShader.setMat4("view", view);
+		lightSource.Draw(lampShader);
+
+		
 		modelShader.use();
+		model = glm::mat4();
 		modelShader.setMat4("projection", projection);
 		modelShader.setMat4("view", view);
-		model = glm::mat4();
 		model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // translate it down so it's at the center of the scene
 		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(2.2f, 2.2f, 2.2f));
