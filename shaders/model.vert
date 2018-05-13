@@ -14,10 +14,12 @@ uniform mat4 projection;
 
 void main()
 {
-   // TexCoords = aTexCoords;    
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
-	pass = vec4(aPos, 1.0);
+   // TexCoords = aTexCoords; 
+	FragPos = vec3(model * vec4(aPos, 1.0));   
+	pass = vec4(aPos, 1.0);		// pass to fragment for terrain colours
 	Normal = aNormal;
-	FragPos = vec3(model * vec4(aPos, 1.0));
+	gl_Position = projection * view * vec4(FragPos, 1.0);
+	
+	
     
 }

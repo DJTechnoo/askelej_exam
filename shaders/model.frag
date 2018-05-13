@@ -8,15 +8,23 @@ in vec3 FragPos;
 
 uniform sampler2D texture_diffuse1;
 uniform vec3 lampPos;
+uniform vec2 season;
 
 void main()
 {    
 	
+	//float lightStrength = 0.1;
+	//vec3 terrainColor;
+	//if(pass.y < -0.9) terrainColor = vec3(1.0, 1.0, 1.0);
+	//else terrainColor = vec3(0.1, 0.5, 0.1);
+	//if(pass.y > 0.0) terrainColor = vec3(0.0, 0.0, 1.0);
+	//vec3 ambient = lightStrength * terrainColor;
+
 	float lightStrength = 0.1;
 	vec3 terrainColor;
-	if(pass.y < -0.9) terrainColor = vec3(1.0, 1.0, 1.0);
+	if(pass.y < season.x) terrainColor = vec3(1.0, 1.0, 1.0);
 	else terrainColor = vec3(0.1, 0.5, 0.1);
-	if(pass.y > 0.0) terrainColor = vec3(0.0, 0.0, 1.0);
+	if(pass.y > season.y) terrainColor = vec3(0.0, 0.0, 1.0);
 	vec3 ambient = lightStrength * terrainColor;
 
 	// up to this point "ambient" is the objects ambient colour

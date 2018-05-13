@@ -39,6 +39,8 @@ float fov = 45.0f;
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
+int season;
+
 int main()
 {
 	// glfw: initialize and configure
@@ -47,7 +49,7 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
+	season = 2;
 
 
 														 // glfw window creation
@@ -83,79 +85,7 @@ int main()
 	Shader modelShader("../shaders/model.vert","../shaders/model.frag");
 	Shader lampShader("../shaders/lamp.vert", "../shaders/lamp.frag");
 
-	// set up vertex data (and buffer(s)) and configure vertex attributes
-	// ------------------------------------------------------------------
-	/*float vertices[] = {
-		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-		0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-		0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-		0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-		0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-		0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-		0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-		0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-		0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-	};
-	// world space positions of our cubes
-	glm::vec3 cubePositions[] = {
-		glm::vec3(0.0f,  0.0f,  0.0f),
-		glm::vec3(2.0f,  5.0f, -15.0f),
-		glm::vec3(-1.5f, -2.2f, -2.5f),
-		glm::vec3(-3.8f, -2.0f, -12.3f),
-		glm::vec3(2.4f, -0.4f, -3.5f),
-		glm::vec3(-1.7f,  3.0f, -7.5f),
-		glm::vec3(1.3f, -2.0f, -2.5f),
-		glm::vec3(1.5f,  2.0f, -2.5f),
-		glm::vec3(1.5f,  0.2f, -1.5f),
-		glm::vec3(-1.3f,  1.0f, -1.5f)
-	};
-	GLuint VBO, VAO;
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	// texture coord attribute
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);*/
+	
 
 
 	// load and create a texture 
@@ -196,6 +126,7 @@ int main()
 	Model ourModel("../Assets/model/ask21mi.blend");
 	ourShader.setInt("texture1", 0);
 	
+	float lampSpeed = 0.005f;
 	glm::vec3 lampPos(1.0f, 3.0f, 0.0f);
 
 	// render loop
@@ -224,9 +155,22 @@ int main()
 		glm::mat4 model;
 
 
+
+		lampPos.z -= lampSpeed;
+		lampShader.use();
+		model = glm::mat4();
+		model = glm::translate(model, lampPos); // translate it down so it's at the center of the scene
+		lampShader.setMat4("model", model);
+		lampShader.setMat4("projection", projection);
+		lampShader.setMat4("view", view);
+		lightSource.Draw(lampShader);
+
+
+
 		ourShader.use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture1);
+		model = glm::mat4();
 		model = glm::translate(model, glm::vec3(0.0f, 1.75f, 0.0f)); // translate it down so it's at the center of the scene
 		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// it's a bit too big for our scene, so scale it down
 		ourShader.setMat4("projection", projection);		
@@ -236,16 +180,19 @@ int main()
 		ourModel.Draw(ourShader);
 
 
-		lampShader.use();
-		model = glm::mat4();
-		model = glm::translate(model, lampPos); // translate it down so it's at the center of the scene
-		lampShader.setMat4("model", model);
-		lampShader.setMat4("projection", projection);
-		lampShader.setMat4("view", view);
-		lightSource.Draw(lampShader);
 
-		
+		//	landscape things and seasons change
+		glm::vec2 seasonVec;
+		switch (season)
+		{
+		case 1: seasonVec.x = -0.6f; seasonVec.y = -0.03f; break;
+		case 2: seasonVec.x = -1.5f; seasonVec.y = -0.09f; break;
+		case 3: seasonVec.x = -1.0f; seasonVec.y = -0.05f; break;
+		case 4: seasonVec.x = -0.01f; seasonVec.y = -0.01f; break;
+		}
+
 		modelShader.use();
+		modelShader.setVec2("season", seasonVec);
 		model = glm::mat4();
 		modelShader.setMat4("projection", projection);
 		modelShader.setMat4("view", view);
@@ -289,6 +236,15 @@ void processInput(GLFWwindow *window)
 		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+
+	if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+		season = 1;
+	if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+		season = 2;
+	if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
+		season = 3;
+	if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
+		season = 4;
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
