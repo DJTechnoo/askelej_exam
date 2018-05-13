@@ -55,7 +55,7 @@ Plane planeControl(glm::vec3(1.0f, 1.0f, 1.0f));
 
 // misc: cam orbit, free camera roam, and save positions
 float orbit = 0.0f;
-bool freeView = false;
+int toggleView;
 int nextSavedPosition;
 std::vector<glm::vec3> savedPositions;		// When user presses "T", save position, and "G" go there
 
@@ -161,9 +161,16 @@ int main()
 		float camZ = cos(orbit) * radius;
 		glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 		glm::mat4 view;
-		if(freeView)
-			view = glm::lookAt(cameraPos, planePos + planeFront, planeUp); // use this to move freely with WASD
-		else view = glm::lookAt(planePos - glm::vec3(camX, 0.0f, camZ), planePos + planeFront, planeUp);
+		switch (toggleView) {
+		case 0: view = glm::lookAt(planePos - glm::vec3(camX, 0.0f, camZ), planePos + planeFront, planeUp); // plane follow
+			break;
+		case 1: view = glm::lookAt(cameraPos, planePos + planeFront, planeUp); // use this to groundmove but lock plane
+			break;
+		case 2: view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); // use this to move freely with WASD
+			break;
+		}
+			
+		
 		glm::mat4 model;
 
 
@@ -361,7 +368,7 @@ void characterCallback(GLFWwindow* window, unsigned int keyCode)
 {
 	std::cout << keyCode << '\n';
 	if (keyCode == 102) {
-		freeView = !freeView;
+		toggleView++; if (toggleView > 2) toggleView = 0;
 	}
 
 	if (keyCode == 103) {
