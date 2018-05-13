@@ -25,7 +25,7 @@ void main()
 	if(pass.y < season.x) terrainColor = vec3(1.0, 1.0, 1.0);
 	else terrainColor = vec3(0.1, 0.5, 0.1);
 	if(pass.y > season.y) terrainColor = vec3(0.0, 0.0, 1.0);
-	vec3 ambient = lightStrength * terrainColor;
+	vec3 ambient = lightStrength * vec3(1.0, 1.0, 1.0);
 
 	// up to this point "ambient" is the objects ambient colour
 	vec3 norm = normalize(Normal);

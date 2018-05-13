@@ -47,6 +47,7 @@ float lastFrame = 0.0f;
 int season;
 
 Plane planeControl(glm::vec3(1.0f, 1.0f, 1.0f));
+float orbit = 0.0f;
 
 int main()
 {
@@ -88,7 +89,7 @@ int main()
 
 	// build and compile our shader zprogram
 	// ------------------------------------
-	Shader ourShader("../shaders/vtx.vert", "../shaders/fmt.frag");
+	Shader planeShader("../shaders/vtx.vert", "../shaders/fmt.frag");
 	Shader modelShader("../shaders/model.vert","../shaders/model.frag");
 	Shader lampShader("../shaders/lamp.vert", "../shaders/lamp.frag");
 
@@ -97,7 +98,7 @@ int main()
 
 	// load and create a texture 
 	// -------------------------
-	unsigned int texture1, texture2;
+	unsigned int texture1;
 	// texture 1
 	// ---------
 	glGenTextures(1, &texture1);
@@ -126,15 +127,17 @@ int main()
 
 	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
 	// -------------------------------------------------------------------------------------------
-	ourShader.use();
 
 	Model terrain("../Assets/test5/first.obj");
 	Model lightSource("../Assets/test4/omg.obj");
 	Model ourModel("../Assets/model/ask21mi.blend");
-	ourShader.setInt("texture1", 0);
+
+	planeShader.use();
+	planeShader.setInt("texture1", 0);
 	
-	float lampSpeed = 0.005f;
-	glm::vec3 lampPos(1.0f, 3.0f, 0.0f);
+	float lampSpeed = 0.001f;
+	glm::vec3 lampPos(1.0f, 19.0f, 2.0f);
+	
 
 	// render loop
 	// -----------
@@ -155,15 +158,17 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		
-
-		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		float radius = 2.0f;
+		float camX = sin(orbit) * radius;
+		float camZ = cos(orbit) * radius;
+		glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+		glm::mat4 view = glm::lookAt(planePos - glm::vec3(camX, -2.0f, camZ), planePos + planeFront, planeUp);
+		//glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 		glm::mat4 model;
 
 
 
-		lampPos.z -= lampSpeed;
+		lampPos.x -= lampSpeed;
 		lampShader.use();
 		model = glm::mat4();
 		model = glm::translate(model, lampPos); // translate it down so it's at the center of the scene
@@ -174,23 +179,25 @@ int main()
 
 
 
-		ourShader.use();
+		planeShader.use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture1);
 		planePos += planeFront * 0.002f;
+		//planePos.z -= 0.002f;
 		model = glm::mat4();
 		model = glm::translate(model, planePos); // translate it down so it's at the center of the scene
-		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		model = glm::rotate(model, glm::radians(180.f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(180.f), glm::vec3(0.0f, 0.0f, 1.0f));
 		model = glm::rotate(model, glm::radians(planeControl.pitch), glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::rotate(model, glm::radians(planeControl.bank), glm::vec3(1.0f, 0.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// it's a bit too big for our scene, so scale it down
-		ourShader.setMat4("projection", projection);		
-		ourShader.setMat4("view", view);
-		ourShader.setMat4("model", model);
+		planeShader.setMat4("projection", projection);		
+		planeShader.setMat4("view", view);
+		planeShader.setMat4("model", model);
 		
-		ourModel.Draw(ourShader);
+		ourModel.Draw(planeShader);
 
 
 
@@ -207,11 +214,11 @@ int main()
 		modelShader.use();
 		modelShader.setVec2("season", seasonVec);
 		model = glm::mat4();
-		modelShader.setMat4("projection", projection);
-		modelShader.setMat4("view", view);
 		model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // translate it down so it's at the center of the scene
 		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(2.2f, 2.2f, 2.2f));
+		modelShader.setMat4("projection", projection);
+		modelShader.setMat4("view", view);
 		modelShader.setMat4("model", model);
 		modelShader.setVec3("lampPos", lampPos);
 		terrain.Draw(modelShader);
@@ -271,10 +278,15 @@ void processInput(GLFWwindow *window)
 	if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
 		season = 4;
 
+	if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
+		orbit += 0.001f;
+	if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
+		orbit -= 0.001f;
+
 	glm::vec3 front;
-	front.x = cos(glm::radians(planeControl.bank)) * cos(glm::radians(planeControl.pitch));
+	front.z = cos(glm::radians(planeControl.bank)) * cos(glm::radians(planeControl.pitch));
 	front.y = sin(glm::radians(planeControl.pitch));
-	front.z = sin(glm::radians(planeControl.bank)) * cos(glm::radians(planeControl.pitch));
+	front.x = sin(glm::radians(planeControl.bank)) * cos(glm::radians(planeControl.pitch));
 	planeFront = glm::normalize(front);
 
 }

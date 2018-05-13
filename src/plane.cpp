@@ -6,8 +6,8 @@
 Plane::Plane(glm::vec3 startPos)
 {
 	pos = startPos;
-	bank = 90.f;
-	pitch = 90.0f;
+	bank = 0.f;
+	pitch = 0.0f;
 }
 
 
