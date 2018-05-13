@@ -12,29 +12,33 @@
 
 #include "model.h"
 #include "plane.h"
+#include "const.h"
 
 #include <iostream>
+#include <vector>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void characterCallback(GLFWwindow* window, unsigned int keyCode);
 void processInput(GLFWwindow *window);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+
 
 // camera
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
+// plane view and position, just like above's camera
 glm::vec3 planePos = glm::vec3(1.0f, 1.0f, 1.0f);
 glm::vec3 planeFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 planeUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
+// for camera movement. Not in use because we follow the plane instead
 bool firstMouse = true;
-float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
+float yaw = -90.0f;	
 float pitch = 0.0f;
 float lastX = 800.0f / 2.0;
 float lastY = 600.0 / 2.0;
@@ -44,15 +48,20 @@ float fov = 45.0f;
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
-int season;
+int season;		// Toggle between 4 seasons
 
+// The plane controller attitude
 Plane planeControl(glm::vec3(1.0f, 1.0f, 1.0f));
+
+// misc: cam orbit, free camera roam, and save positions
 float orbit = 0.0f;
+bool freeView = false;
+int nextSavedPosition;
+std::vector<glm::vec3> savedPositions;		// When user presses "T", save position, and "G" go there
 
 int main()
 {
-	// glfw: initialize and configure
-	// ------------------------------
+	
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -60,8 +69,7 @@ int main()
 	season = 2;
 
 
-														 // glfw window creation
-														 // --------------------
+													
 	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Lovely Exam", NULL, NULL);
 	if (window == NULL)
 	{
@@ -73,22 +81,18 @@ int main()
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
-
-	// tell GLFW to capture our mouse
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCharCallback(window, characterCallback);
 
-	// glad: load all OpenGL function pointers
-	// ---------------------------------------
+	
 	// glew stuff
 	glewExperimental = GL_TRUE;
 	glewInit();
 
 	// configure global opengl state
-	// -----------------------------
 	glEnable(GL_DEPTH_TEST);
 
-	// build and compile our shader zprogram
-	// ------------------------------------
+	// three shaders used: for plane, terrain, and lightsource respectively
 	Shader planeShader("../shaders/vtx.vert", "../shaders/fmt.frag");
 	Shader modelShader("../shaders/model.vert","../shaders/model.frag");
 	Shader lampShader("../shaders/lamp.vert", "../shaders/lamp.frag");
@@ -96,20 +100,14 @@ int main()
 	
 
 
-	// load and create a texture 
-	// -------------------------
-	unsigned int texture1;
-	// texture 1
-	// ---------
-	glGenTextures(1, &texture1);
-	glBindTexture(GL_TEXTURE_2D, texture1);
-	// set the texture wrapping parameters
+	// Load the plane texture since it didn't load into the model somehow.
+	unsigned int planeTexture;
+	glGenTextures(1, &planeTexture);
+	glBindTexture(GL_TEXTURE_2D, planeTexture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// set texture filtering parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	// load image, create texture and generate mipmaps
 	int width, height, nrChannels;
 	stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
 	unsigned char *data = stbi_load("../Assets/plane.png", &width, &height, &nrChannels, 0);
@@ -125,50 +123,57 @@ int main()
 	stbi_image_free(data);
 	
 
-	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
-	// -------------------------------------------------------------------------------------------
-
+	
+	// The physical models: Terrain, lightsource, and plane respectively
 	Model terrain("../Assets/test5/first.obj");
 	Model lightSource("../Assets/test4/omg.obj");
-	Model ourModel("../Assets/model/ask21mi.blend");
+	Model planeModel("../Assets/model/ask21mi.blend");
 
+	// we only need to set the texture once, so it is outside the game-loop
 	planeShader.use();
 	planeShader.setInt("texture1", 0);
 	
+
+
+	// lightsource properties
 	float lampSpeed = 0.001f;
-	glm::vec3 lampPos(1.0f, 19.0f, 2.0f);
+	glm::vec3 lampPos(1.0f, -10.0f, 2.0f);
 	
 
-	// render loop
-	// -----------
+	// Game loop
 	while (!glfwWindowShouldClose(window))
 	{
-		// per-frame time logic
-		// --------------------
+		// deltatime
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		// input
-		// -----
+		// key listener
 		processInput(window);
 
-		// render
-		// ------
+		// clear screen
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		// properties to follow the plane
 		float radius = 2.0f;
 		float camX = sin(orbit) * radius;
 		float camZ = cos(orbit) * radius;
 		glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-		glm::mat4 view = glm::lookAt(planePos - glm::vec3(camX, -2.0f, camZ), planePos + planeFront, planeUp);
-		//glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		glm::mat4 view;
+		if(freeView)
+			view = glm::lookAt(cameraPos, planePos + planeFront, planeUp); // use this to move freely with WASD
+		else view = glm::lookAt(planePos - glm::vec3(camX, 0.0f, camZ), planePos + planeFront, planeUp);
 		glm::mat4 model;
 
 
-
-		lampPos.x -= lampSpeed;
+		// Update and draw the lightSource
+		//lampPos.x -= lampSpeed;
+		float sunRadius = 100.0f;
+		float lampX = sin(currentFrame/10.0f) * sunRadius;
+		float lampZ = cos(currentFrame/10.0f) * sunRadius;
+		lampPos.x = lampX;
+		lampPos.z = lampZ;
 		lampShader.use();
 		model = glm::mat4();
 		model = glm::translate(model, lampPos); // translate it down so it's at the center of the scene
@@ -178,10 +183,10 @@ int main()
 		lightSource.Draw(lampShader);
 
 
-
+		// update and draw the plane
 		planeShader.use();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture1);
+		glBindTexture(GL_TEXTURE_2D, planeTexture);
 		planePos += planeFront * 0.002f;
 		//planePos.z -= 0.002f;
 		model = glm::mat4();
@@ -192,16 +197,16 @@ int main()
 		model = glm::rotate(model, glm::radians(180.f), glm::vec3(0.0f, 0.0f, 1.0f));
 		model = glm::rotate(model, glm::radians(planeControl.pitch), glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::rotate(model, glm::radians(planeControl.bank), glm::vec3(1.0f, 0.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// it's a bit too big for our scene, so scale it down
+		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// it's a bit too big for our scene, so scale it down
 		planeShader.setMat4("projection", projection);		
 		planeShader.setMat4("view", view);
 		planeShader.setMat4("model", model);
 		
-		ourModel.Draw(planeShader);
+		planeModel.Draw(planeShader);
 
 
 
-		//	landscape things and seasons change
+		//	Listen to which season to display
 		glm::vec2 seasonVec;
 		switch (season)
 		{
@@ -211,6 +216,7 @@ int main()
 		case 4: seasonVec.x = -0.01f; seasonVec.y = -0.01f; break;
 		}
 
+		// update season and draw terrain
 		modelShader.use();
 		modelShader.setVec2("season", seasonVec);
 		model = glm::mat4();
@@ -223,26 +229,22 @@ int main()
 		modelShader.setVec3("lampPos", lampPos);
 		terrain.Draw(modelShader);
 
-		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-		// -------------------------------------------------------------------------------
+		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 
-	// optional: de-allocate all resources once they've outlived their purpose:
-	// ------------------------------------------------------------------------
-	//glDeleteVertexArrays(1, &VAO);
-	//glDeleteBuffers(1, &VBO);
-
-	// glfw: terminate, clearing all previously allocated GLFW resources.
-	// ------------------------------------------------------------------
+	
 	glfwTerminate();
 	
 	return 0;
 }
 
-// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
+/**
+* @param	a GLFWindow reference to the window
+* @brief	Listen to which keys are pressed, and updates 
+*			camera position, glider attitude and camera orbit
+*/
 void processInput(GLFWwindow *window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -261,13 +263,13 @@ void processInput(GLFWwindow *window)
 
 
 	if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) 
-		planeControl.changePitch(0.1f);
+		planeControl.changeBank(0.1f);
 	if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
-		planeControl.changeBank(-0.1);
-	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
 		planeControl.changePitch(-0.1);
+	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+		planeControl.changeBank(-0.1);
 	if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
-		planeControl.changeBank(0.1);
+		planeControl.changePitch(0.1);
 
 	if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
 		season = 1;
@@ -291,17 +293,20 @@ void processInput(GLFWwindow *window)
 
 }
 
-// glfw: whenever the window size changed (by OS or user resize) this callback function executes
-// ---------------------------------------------------------------------------------------------
+/**
+*	@Param	A reference to GLFWindow and two integers for width and height
+*	@brief	Resizes the window relatively to the new window size
+*/
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-	// make sure the viewport matches the new window dimensions; note that width and 
-	// height will be significantly larger than specified on retina displays.
 	glViewport(0, 0, width, height);
 }
 
-// glfw: whenever the mouse moves, this callback is called
-// -------------------------------------------------------
+/**
+*	@Param	A reference to GLFWwindow and two double mouse coordinates
+*	@Brief	Chekcs if we moved the mouse a first time, and finds mouse position.
+			Also makes sure we don't go off limits.
+*/
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	if (firstMouse)
@@ -336,8 +341,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	cameraFront = glm::normalize(front);
 }
 
-// glfw: whenever the mouse scroll wheel scrolls, this callback is called
-// ----------------------------------------------------------------------
+/**
+*	@Param	A reference to GLFWwindow and two double differences in mouse scroll.
+	@Brief	To check how much we scroll (zoom, side scroll)
+*/
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	if (fov >= 1.0f && fov <= 45.0f)
@@ -347,3 +354,28 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	if (fov >= 45.0f)
 		fov = 45.0f;
 }
+
+
+
+void characterCallback(GLFWwindow* window, unsigned int keyCode)
+{
+	std::cout << keyCode << '\n';
+	if (keyCode == 102) {
+		freeView = !freeView;
+	}
+
+	if (keyCode == 103) {
+		if (savedPositions.size() > 0) {
+			planePos = savedPositions[nextSavedPosition++];		// GOES TO SAVED POSITION
+			if (nextSavedPosition >= savedPositions.size())
+				nextSavedPosition = 0;
+		}
+	}
+
+	if (keyCode == 116)
+		savedPositions.push_back(planePos);			// CAN SAVE POSITION
+}
+
+
+
+
