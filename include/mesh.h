@@ -1,6 +1,8 @@
 #ifndef MESH_H
 #define MESH_H
 
+// credits to www.learnopengl.com
+
 #include <GL/glew.h>
 
 #include "glm/glm/glm.hpp"

@@ -1,6 +1,8 @@
 #ifndef MODEL_H
 #define MODEL_H
 
+// Creadits to www.learnopengl.com
+
 #include <GL/glew.h>
 
 #include "glm/glm/glm.hpp"
