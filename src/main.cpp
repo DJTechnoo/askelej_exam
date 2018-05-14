@@ -32,7 +32,8 @@ glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 // plane view and position, just like above's camera
-glm::vec3 planePos = glm::vec3(1.0f, 3.0f, 2.0f);
+glm::vec3 startPos(1.0f, 3.0f, 2.0f);
+glm::vec3 planePos = startPos;
 glm::vec3 planeFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 planeUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -384,6 +385,8 @@ void characterCallback(GLFWwindow* window, unsigned int keyCode)
 
 	if (keyCode == 116)
 		savedPositions.push_back(planePos);			// CAN SAVE POSITION
+
+	if (keyCode == 114) planePos = startPos;
 }
 
 
